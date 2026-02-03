@@ -4,6 +4,7 @@ import { ExpressAdapter } from '@nestjs/platform-express';
 import { DocumentBuilder, SwaggerModule } from '@nestjs/swagger';
 import express from 'express';
 import path from 'path';
+import 'reflect-metadata';
 import serverless from 'serverless-http';
 import { AppModule } from '../src/app.module';
 
@@ -14,17 +15,6 @@ async function bootstrap() {
   const adapter = new ExpressAdapter(expressApp);
 
   const app = await NestFactory.create(AppModule, adapter);
-
-  // Swagger Documentation
-  const config = new DocumentBuilder()
-    .setTitle('C15 Tour API')
-    .setDescription("API pour l'application C15 Tour")
-    .setVersion('1.0')
-    .addBearerAuth()
-    .build();
-
-  const document = SwaggerModule.createDocument(app as any, config);
-  SwaggerModule.setup('api', app as any, document);
 
   // CORS
   app.enableCors();
@@ -43,6 +33,17 @@ async function bootstrap() {
       transformOptions: { enableImplicitConversion: true },
     }),
   );
+
+  // Documentation swagger (Vercel specific)
+  const config = new DocumentBuilder()
+    .setTitle('C15 Tour API')
+    .setDescription("API pour l'application C15 Tour (Vercel Build)")
+    .setVersion('1.0')
+    .addBearerAuth()
+    .build();
+
+  const document = SwaggerModule.createDocument(app, config);
+  SwaggerModule.setup('api', app, document);
 
   await app.init();
   return serverless(expressApp);
