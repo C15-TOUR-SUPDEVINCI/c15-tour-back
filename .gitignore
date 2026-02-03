@@ -2,6 +2,8 @@
 /dist
 /node_modules
 /build
+.env
+src/migrations/*
 
 # Logs
 logs
