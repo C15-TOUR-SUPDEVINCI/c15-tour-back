@@ -9,9 +9,20 @@ import { RealTimePosition } from './entities/real-time-position.entity';
 import { CorrectionNavigation } from './entities/correction.entity';
 import { Notification } from './entities/notification.entity';
 
+import { EventsModule } from '../events/events.module';
+
 @Module({
-    imports: [TypeOrmModule.forFeature([Participation, RealTimePosition, CorrectionNavigation, Notification])],
-    controllers: [ParticipationController, RealTimePositionController],
-    providers: [ParticipationService, RealTimePositionService],
+  imports: [
+    TypeOrmModule.forFeature([
+      Participation,
+      RealTimePosition,
+      CorrectionNavigation,
+      Notification,
+    ]),
+    EventsModule,
+  ],
+  controllers: [ParticipationController, RealTimePositionController],
+  providers: [ParticipationService, RealTimePositionService],
+  exports: [ParticipationService],
 })
-export class ParticipationModule { }
+export class ParticipationModule {}

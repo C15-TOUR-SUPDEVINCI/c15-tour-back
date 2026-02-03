@@ -9,8 +9,8 @@ import { Point } from './entities/point.entity';
 import { Segment } from './entities/segment.entity';
 
 @Module({
-    imports: [TypeOrmModule.forFeature([Route, Point, Segment])],
-    controllers: [RoutesController, PointsController],
-    providers: [RoutesService, PointsService],
+  imports: [TypeOrmModule.forFeature([Route, Point, Segment])],
+  controllers: [RoutesController, PointsController],
+  providers: [RoutesService, PointsService],
 })
-export class RoutesModule { }
+export class RoutesModule {}

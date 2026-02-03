@@ -5,20 +5,23 @@ import { RealTimePosition } from './entities/real-time-position.entity';
 
 @Injectable()
 export class RealTimePositionService {
-    constructor(
-        @InjectRepository(RealTimePosition)
-        private positionsRepository: Repository<RealTimePosition>,
-    ) { }
+  constructor(
+    @InjectRepository(RealTimePosition)
+    private positionsRepository: Repository<RealTimePosition>,
+  ) {}
 
-    create(position: Partial<RealTimePosition>) {
-        return this.positionsRepository.save(position);
-    }
+  create(position: Partial<RealTimePosition>) {
+    return this.positionsRepository.save(position);
+  }
 
-    findAll() {
-        return this.positionsRepository.find();
-    }
+  findAll() {
+    return this.positionsRepository.find();
+  }
 
-    findByParticipation(participationId: string) {
-        return this.positionsRepository.find({ where: { participationId }, order: { timestamp: 'DESC' } });
-    }
+  findByParticipation(participationId: string) {
+    return this.positionsRepository.find({
+      where: { participationId },
+      order: { timestamp: 'DESC' },
+    });
+  }
 }

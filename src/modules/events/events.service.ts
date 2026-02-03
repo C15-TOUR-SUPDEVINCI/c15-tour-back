@@ -5,29 +5,33 @@ import { Event } from './entities/event.entity';
 
 @Injectable()
 export class EventsService {
-    constructor(
-        @InjectRepository(Event)
-        private eventsRepository: Repository<Event>,
-    ) { }
+  constructor(
+    @InjectRepository(Event)
+    private eventsRepository: Repository<Event>,
+  ) {}
 
-    create(event: Partial<Event>) {
-        // Logic for generating shareCode would go here
-        return this.eventsRepository.save(event);
-    }
+  create(event: Partial<Event>) {
+    // Logic for generating shareCode would go here
+    return this.eventsRepository.save(event);
+  }
 
-    findAll() {
-        return this.eventsRepository.find();
-    }
+  findAll() {
+    return this.eventsRepository.find();
+  }
 
-    findOne(id: string) {
-        return this.eventsRepository.findOneBy({ id });
-    }
+  findOne(id: string) {
+    return this.eventsRepository.findOneBy({ id });
+  }
 
-    update(id: string, event: Partial<Event>) {
-        return this.eventsRepository.update(id, event);
-    }
+  update(id: string, event: Partial<Event>) {
+    return this.eventsRepository.update(id, event);
+  }
 
-    remove(id: string) {
-        return this.eventsRepository.delete(id);
-    }
+  async findByShareCode(code: string): Promise<Event | null> {
+    return this.eventsRepository.findOneBy({ shareCode: code });
+  }
+
+  remove(id: string) {
+    return this.eventsRepository.delete(id);
+  }
 }
