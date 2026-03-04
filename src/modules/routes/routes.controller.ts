@@ -1,33 +1,68 @@
-import { Controller, Get, Post, Body, Patch, Param, Delete } from '@nestjs/common';
+import {
+  Controller,
+  Get,
+  Post,
+  Body,
+  Patch,
+  Param,
+  Delete,
+  UseGuards,
+} from '@nestjs/common';
+import { ApiTags, ApiBearerAuth, ApiOperation } from '@nestjs/swagger';
 import { RoutesService } from './routes.service';
-import { Route } from './entities/route.entity';
+import { CreateRouteDto } from './dto/create-route.dto';
+import { UpdateRouteDto } from './dto/update-route.dto';
+import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
 
+@ApiTags('routes')
 @Controller('routes')
 export class RoutesController {
-    constructor(private readonly routesService: RoutesService) { }
+  constructor(private readonly routesService: RoutesService) {}
 
-    @Post()
-    create(@Body() route: Partial<Route>) {
-        return this.routesService.create(route);
-    }
+  @Post()
+  @ApiBearerAuth()
+  @UseGuards(JwtAuthGuard)
+  @ApiOperation({ summary: 'Create a route for an event' })
+  create(@Body() createRouteDto: CreateRouteDto) {
+    return this.routesService.create(createRouteDto);
+  }
 
-    @Get()
-    findAll() {
-        return this.routesService.findAll();
-    }
+  @Get()
+  @ApiOperation({ summary: 'Get all routes' })
+  findAll() {
+    return this.routesService.findAll();
+  }
 
-    @Get(':id')
-    findOne(@Param('id') id: string) {
-        return this.routesService.findOne(id);
-    }
+  @Get(':id')
+  @ApiOperation({ summary: 'Get route by ID (includes points and segments)' })
+  findOne(@Param('id') id: string) {
+    return this.routesService.findOne(id);
+  }
 
-    @Patch(':id')
-    update(@Param('id') id: string, @Body() route: Partial<Route>) {
-        return this.routesService.update(id, route);
-    }
+  @Patch(':id')
+  @ApiBearerAuth()
+  @UseGuards(JwtAuthGuard)
+  @ApiOperation({ summary: 'Update route' })
+  update(@Param('id') id: string, @Body() updateRouteDto: UpdateRouteDto) {
+    return this.routesService.update(id, updateRouteDto);
+  }
 
-    @Delete(':id')
-    remove(@Param('id') id: string) {
-        return this.routesService.remove(id);
-    }
+  @Post(':id/calculate')
+  @ApiBearerAuth()
+  @UseGuards(JwtAuthGuard)
+  @ApiOperation({
+    summary:
+      'Calculate all segments for a route via the configured mapping provider (OSRM / Mapbox / Google Maps)',
+  })
+  calculateRoute(@Param('id') id: string) {
+    return this.routesService.calculateRoute(id);
+  }
+
+  @Delete(':id')
+  @ApiBearerAuth()
+  @UseGuards(JwtAuthGuard)
+  @ApiOperation({ summary: 'Delete route' })
+  remove(@Param('id') id: string) {
+    return this.routesService.remove(id);
+  }
 }

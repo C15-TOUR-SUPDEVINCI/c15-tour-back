@@ -1,7 +1,13 @@
-import { Injectable } from '@nestjs/common';
+import {
+  Injectable,
+  NotFoundException,
+  BadRequestException,
+} from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 import { User } from './entities/user.entity';
+import { CreateUserDto } from './dto/create-user.dto';
+import { UpdateUserDto } from './dto/update-user.dto';
 import * as bcrypt from 'bcrypt';
 
 @Injectable()
@@ -11,7 +17,7 @@ export class UsersService {
     private usersRepository: Repository<User>,
   ) {}
 
-  async findAll() {
+  async findAll(): Promise<User[]> {
     return this.usersRepository.find();
   }
 
@@ -26,27 +32,50 @@ export class UsersService {
         'isActive',
         'firstName',
         'lastName',
-      ], // Explicitly select password
+      ],
     });
   }
 
-  findOne(id: string) {
-    return this.usersRepository.findOneBy({ id });
+  async findOne(id: string): Promise<User> {
+    const user = await this.usersRepository.findOneBy({ id });
+    if (!user) {
+      throw new NotFoundException(`User with ID "${id}" not found`);
+    }
+    return user;
   }
 
-  async create(userData: Partial<User>) {
+  async create(userData: CreateUserDto | Partial<User>): Promise<User> {
     if (userData.password) {
       const salt = await bcrypt.genSalt();
       userData.password = await bcrypt.hash(userData.password, salt);
     }
-    return this.usersRepository.save(userData);
+    // Check for duplicate email
+    if (userData.email) {
+      const existing = await this.usersRepository.findOneBy({
+        email: userData.email,
+      });
+      if (existing) {
+        throw new BadRequestException(
+          `Email "${userData.email}" is already taken`,
+        );
+      }
+    }
+    const user = this.usersRepository.create(userData);
+    return this.usersRepository.save(user);
   }
 
-  update(id: string, user: Partial<User>) {
-    return this.usersRepository.update(id, user);
+  async update(id: string, updateUserDto: UpdateUserDto): Promise<User> {
+    const user = await this.findOne(id);
+    if (updateUserDto.password) {
+      const salt = await bcrypt.genSalt();
+      updateUserDto.password = await bcrypt.hash(updateUserDto.password, salt);
+    }
+    Object.assign(user, updateUserDto);
+    return this.usersRepository.save(user);
   }
 
-  remove(id: string) {
-    return this.usersRepository.delete(id);
+  async remove(id: string): Promise<void> {
+    const user = await this.findOne(id);
+    await this.usersRepository.remove(user);
   }
 }

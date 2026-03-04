@@ -36,9 +36,7 @@ export class AuthController {
   @ApiOperation({ summary: 'Participant joins an event via code' })
   async join(@Body() loginDto: LoginParticipantDto) {
     return this.authService.participantLogin(
-      // eslint-disable-next-line @typescript-eslint/no-unsafe-argument, @typescript-eslint/no-unsafe-member-access
       loginDto.code,
-      // eslint-disable-next-line @typescript-eslint/no-unsafe-argument, @typescript-eslint/no-unsafe-member-access
       loginDto.anonymousId,
     );
   }

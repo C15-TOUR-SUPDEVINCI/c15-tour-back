@@ -2,8 +2,7 @@ import { NestFactory } from '@nestjs/core';
 import { DocumentBuilder, SwaggerModule } from '@nestjs/swagger';
 import { AppModule } from './app.module';
 import { ValidationPipe } from '@nestjs/common';
-// import { MulterExceptionFilter } from './common/filters/multer-exception.filter';
-// import { ProduitImportService } from './modules/catalogue/produits/produit-import.service';
+import { GlobalExceptionFilter } from './common/filters/global-exception.filter';
 
 import path from 'path';
 import express from 'express';
@@ -18,8 +17,8 @@ async function bootstrap() {
   const uploadRoot = path.join(process.cwd(), 'uploads');
   app.use('/uploads', express.static(uploadRoot));
 
-  // Global exception filter for Multer errors
-  // app.useGlobalFilters(new MulterExceptionFilter());
+  // Global exception filter
+  app.useGlobalFilters(new GlobalExceptionFilter());
 
   app.useGlobalPipes(
     new ValidationPipe({
