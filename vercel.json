@@ -5,14 +5,14 @@
             "src": "api/index.ts",
             "use": "@vercel/node",
             "config": {
-                "includeFiles": ["src/**", "node_modules/**"]
+                "includeFiles": ["src/**"]
             }
         }
     ],
-    "rewrites": [
+    "routes": [
         {
-            "source": "/(.*)",
-            "destination": "/api/index"
+            "src": "/(.*)",
+            "dest": "/api/index.ts"
         }
     ]
 }
