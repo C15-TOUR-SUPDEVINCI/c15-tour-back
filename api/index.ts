@@ -1,27 +1,19 @@
 import { ValidationPipe } from '@nestjs/common';
-import { ExpressAdapter } from '@nestjs/platform-express';
-import { DocumentBuilder, SwaggerModule } from '@nestjs/swagger';
-import express, { type Application } from 'express';
 import { NestFactory } from '@nestjs/core';
+import { DocumentBuilder, SwaggerModule } from '@nestjs/swagger';
 import { AppModule } from '../src/app.module';
 import { GlobalExceptionFilter } from '../src/common/filters/global-exception.filter';
 
-const expressApp = express();
-const adapter = new ExpressAdapter(expressApp);
-let appPromise: Promise<Application> | undefined;
+// Cache the express handler across warm invocations
+let expressHandler: ReturnType<typeof Function.prototype.call> | undefined;
 
 async function bootstrap() {
-  const app = await NestFactory.create(AppModule, adapter);
+  // Let NestJS manage its own Express instance to avoid app.router compatibility issues
+  const app = await NestFactory.create(AppModule);
 
-  // CORS
   app.enableCors();
-
-  // Global prefix
   app.setGlobalPrefix('api');
-
-  // Global exception filter — handles DB errors, FK violations, etc.
   app.useGlobalFilters(new GlobalExceptionFilter());
-
   app.useGlobalPipes(
     new ValidationPipe({
       whitelist: true,
@@ -30,7 +22,6 @@ async function bootstrap() {
     }),
   );
 
-  // Swagger
   const config = new DocumentBuilder()
     .setTitle('C15 Tour API')
     .setDescription("API pour l'application C15 Tour")
@@ -41,21 +32,24 @@ async function bootstrap() {
   const document = SwaggerModule.createDocument(app, config);
   SwaggerModule.setup('api', app, document, {
     customSiteTitle: 'C15 Tour API',
-    customCssUrl: 'https://unpkg.com/swagger-ui-dist@5.31.0/swagger-ui.css',
+    customCssUrl:
+      'https://unpkg.com/swagger-ui-dist@5.31.0/swagger-ui.css',
     customJs: [
       'https://unpkg.com/swagger-ui-dist@5.31.0/swagger-ui-bundle.js',
       'https://unpkg.com/swagger-ui-dist@5.31.0/swagger-ui-standalone-preset.js',
     ],
   });
 
+  // Init without starting an HTTP server
   await app.init();
-  return expressApp;
+
+  // Return the underlying Express handler
+  return app.getHttpAdapter().getInstance();
 }
 
 export default async function handler(req: any, res: any) {
-  if (!appPromise) {
-    appPromise = bootstrap();
+  if (!expressHandler) {
+    expressHandler = await bootstrap();
   }
-  const app = await appPromise;
-  app(req, res);
+  expressHandler(req, res);
 }
