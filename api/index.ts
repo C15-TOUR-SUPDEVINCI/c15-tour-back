@@ -4,6 +4,7 @@ import { DocumentBuilder, SwaggerModule } from '@nestjs/swagger';
 import express, { type Application } from 'express';
 import { NestFactory } from '@nestjs/core';
 import { AppModule } from '../src/app.module';
+import { GlobalExceptionFilter } from '../src/common/filters/global-exception.filter';
 
 const expressApp = express();
 const adapter = new ExpressAdapter(expressApp);
@@ -16,10 +17,10 @@ async function bootstrap() {
   app.enableCors();
 
   // Global prefix
-  // Note: If you use 'api' as global prefix, Swagger path should be 'api' relative to root or different.
-  // With Vercel rewrites to /api/index, we might face path doubling issues.
-  // However, consistent with typical storage, we keep it simple.
   app.setGlobalPrefix('api');
+
+  // Global exception filter — handles DB errors, FK violations, etc.
+  app.useGlobalFilters(new GlobalExceptionFilter());
 
   app.useGlobalPipes(
     new ValidationPipe({
@@ -29,10 +30,10 @@ async function bootstrap() {
     }),
   );
 
-  // Configure Swagger
+  // Swagger
   const config = new DocumentBuilder()
     .setTitle('C15 Tour API')
-    .setDescription('API documentation for C15 Tour Backend')
+    .setDescription("API pour l'application C15 Tour")
     .setVersion('1.0.0')
     .addBearerAuth()
     .build();
