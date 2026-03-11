@@ -1,19 +1,16 @@
 import { ValidationPipe } from '@nestjs/common';
-import { NestFactory } from '@nestjs/core';
 import { ExpressAdapter } from '@nestjs/platform-express';
 import { DocumentBuilder, SwaggerModule } from '@nestjs/swagger';
-import express from 'express';
-import path from 'path';
-import 'reflect-metadata';
-import serverless from 'serverless-http';
+import express, { type Application } from 'express';
+import { NestFactory } from '@nestjs/core';
 import { AppModule } from '../src/app.module';
+import { GlobalExceptionFilter } from '../src/common/filters/global-exception.filter';
 
-let cachedServer: any;
+const expressApp = express();
+const adapter = new ExpressAdapter(expressApp);
+let appPromise: Promise<Application> | undefined;
 
 async function bootstrap() {
-  const expressApp = express();
-  const adapter = new ExpressAdapter(expressApp);
-
   const app = await NestFactory.create(AppModule, adapter);
 
   // CORS
@@ -22,9 +19,8 @@ async function bootstrap() {
   // Global prefix
   app.setGlobalPrefix('api');
 
-  // Static files
-  const uploadRoot = path.join(process.cwd(), 'uploads');
-  app.use('/uploads', express.static(uploadRoot));
+  // Global exception filter — handles DB errors, FK violations, etc.
+  app.useGlobalFilters(new GlobalExceptionFilter());
 
   app.useGlobalPipes(
     new ValidationPipe({
@@ -34,24 +30,32 @@ async function bootstrap() {
     }),
   );
 
-  // Documentation swagger (Vercel specific)
+  // Swagger
   const config = new DocumentBuilder()
     .setTitle('C15 Tour API')
-    .setDescription("API pour l'application C15 Tour (Vercel Build)")
-    .setVersion('1.0')
+    .setDescription("API pour l'application C15 Tour")
+    .setVersion('1.0.0')
     .addBearerAuth()
     .build();
 
   const document = SwaggerModule.createDocument(app, config);
-  SwaggerModule.setup('api', app, document);
+  SwaggerModule.setup('api', app, document, {
+    customSiteTitle: 'C15 Tour API',
+    customCssUrl: 'https://unpkg.com/swagger-ui-dist@5.31.0/swagger-ui.css',
+    customJs: [
+      'https://unpkg.com/swagger-ui-dist@5.31.0/swagger-ui-bundle.js',
+      'https://unpkg.com/swagger-ui-dist@5.31.0/swagger-ui-standalone-preset.js',
+    ],
+  });
 
   await app.init();
-  return serverless(expressApp);
+  return expressApp;
 }
 
-export default async (req: any, res: any) => {
-  if (!cachedServer) {
-    cachedServer = await bootstrap();
+export default async function handler(req: any, res: any) {
+  if (!appPromise) {
+    appPromise = bootstrap();
   }
-  return cachedServer(req, res);
-};
+  const app = await appPromise;
+  app(req, res);
+}

@@ -39,6 +39,11 @@ export class TypeOrmConfig implements TypeOrmOptionsFactory {
       ],
       synchronize: this.configService.get('DB_SYNCHRONIZE') === 'true',
       logging: this.configService.get('DB_LOGGING', false),
+      // Aiven (and most cloud MySQL providers) require SSL in production
+      ssl:
+        this.configService.get('NODE_ENV') === 'production'
+          ? { rejectUnauthorized: false }
+          : false,
     };
   }
 }

@@ -2,11 +2,16 @@ import {
   Injectable,
   NotFoundException,
   BadRequestException,
+  ConflictException,
 } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
-import { Participation } from './entities/participation.entity';
+import {
+  Participation,
+  ParticipationStatus,
+} from './entities/participation.entity';
 import { EventsService } from '../events/events.service';
+import { EventStatus } from '../events/entities/event.entity';
 import { v4 as uuidv4 } from 'uuid';
 
 @Injectable()
@@ -18,57 +23,85 @@ export class ParticipationService {
   ) {}
 
   async joinEvent(code: string, anonymousId?: string): Promise<Participation> {
-    // 1. Validate Event Code
+    // 1. Validate event by share code
     const event = await this.eventsService.findByShareCode(code);
     if (!event) {
       throw new NotFoundException('Event not found or invalid code');
     }
 
-    // 2. Check if anonymousId is provided, else generate one
+    // 2. Check event is active (ONGOING or PLANNED)
+    if (
+      event.status !== EventStatus.ONGOING &&
+      event.status !== EventStatus.PLANNED
+    ) {
+      throw new BadRequestException(
+        `Event is not available to join (status: ${event.status})`,
+      );
+    }
+
+    // 3. Check capacity
+    if (event.currentParticipantsCount >= event.maxParticipants) {
+      throw new ConflictException(
+        'This event has reached its maximum capacity',
+      );
+    }
+
+    // 4. Resolve anonymousId
     const realAnonymousId = anonymousId || uuidv4();
 
-    // 3. Check if already participating (idempotency)
+    // 5. Idempotency — return existing participation if same device
     const existing = await this.participationRepository.findOne({
-      where: {
-        eventId: event.id,
-        anonymousId: realAnonymousId,
-      },
+      where: { eventId: event.id, anonymousId: realAnonymousId },
     });
-
     if (existing) {
       return existing;
     }
 
-    // 4. Create Participation
+    // 6. Create participation
     const participation = this.participationRepository.create({
       event,
+      eventId: event.id,
       anonymousId: realAnonymousId,
-      // status default is REGISTERED
+      status: ParticipationStatus.REGISTERED,
     });
+    const saved = await this.participationRepository.save(participation);
 
+    // 7. Increment participant count
+    await this.eventsService.incrementParticipantCount(event.id);
+
+    return saved;
+  }
+
+  create(participation: Partial<Participation>): Promise<Participation> {
     return this.participationRepository.save(participation);
   }
 
-  create(participation: Partial<Participation>) {
-    return this.participationRepository.save(participation);
-  }
-
-  findAll() {
+  findAll(): Promise<Participation[]> {
     return this.participationRepository.find({ relations: ['user', 'event'] });
   }
 
-  findOne(id: string) {
-    return this.participationRepository.findOne({
+  async findOne(id: string): Promise<Participation> {
+    const participation = await this.participationRepository.findOne({
       where: { id },
       relations: ['user', 'event', 'positions', 'corrections'],
     });
+    if (!participation) {
+      throw new NotFoundException(`Participation with ID "${id}" not found`);
+    }
+    return participation;
   }
 
-  update(id: string, participation: Partial<Participation>) {
-    return this.participationRepository.update(id, participation);
+  async update(
+    id: string,
+    participation: Partial<Participation>,
+  ): Promise<Participation> {
+    const existing = await this.findOne(id);
+    Object.assign(existing, participation);
+    return this.participationRepository.save(existing);
   }
 
-  remove(id: string) {
-    return this.participationRepository.delete(id);
+  async remove(id: string): Promise<void> {
+    const participation = await this.findOne(id);
+    await this.participationRepository.remove(participation);
   }
 }
