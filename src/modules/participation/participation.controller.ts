@@ -18,6 +18,7 @@ import {
 import { ParticipationService } from './participation.service';
 import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
 import { CreateParticipationDto } from './dto/create-participation.dto';
+import { UpdateParticipationDto } from './dto/update-participation.dto';
 import { ParticipationResponseDto } from './dto/participation-response.dto';
 
 @ApiTags('participation')
@@ -55,7 +56,7 @@ export class ParticipationController {
   @UseGuards(JwtAuthGuard)
   @ApiOperation({ summary: 'Update participation (status, progress, etc.)' })
   @ApiOkResponse({ type: ParticipationResponseDto })
-  update(@Param('id') id: string, @Body() body: Record<string, any>) {
+  update(@Param('id') id: string, @Body() body: UpdateParticipationDto) {
     return this.participationService.update(id, body);
   }
 

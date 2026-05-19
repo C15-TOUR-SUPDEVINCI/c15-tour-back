@@ -29,7 +29,7 @@ export class UsersController {
   constructor(private readonly usersService: UsersService) {}
 
   @Post()
-  @ApiOperation({ summary: 'Create a new user (admin only)' })
+  @ApiOperation({ summary: 'Create a new user' })
   @ApiCreatedResponse({ type: UserResponseDto })
   create(@Body() createUserDto: CreateUserDto) {
     return this.usersService.create(createUserDto);
