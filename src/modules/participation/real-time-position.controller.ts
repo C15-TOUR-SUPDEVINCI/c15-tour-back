@@ -1,7 +1,7 @@
 import { Controller, Get, Post, Body, Query } from '@nestjs/common';
 import { ApiTags, ApiOperation, ApiQuery, ApiCreatedResponse, ApiOkResponse } from '@nestjs/swagger';
 import { RealTimePositionService } from './real-time-position.service';
-import { RealTimePosition } from './entities/real-time-position.entity';
+import { CreateRealTimePositionDto } from './dto/create-real-time-position.dto';
 import { RealTimePositionResponseDto } from './dto/real-time-position-response.dto';
 
 @ApiTags('positions')
@@ -12,7 +12,7 @@ export class RealTimePositionController {
   @Post()
   @ApiOperation({ summary: 'Record a GPS position for a participation' })
   @ApiCreatedResponse({ type: RealTimePositionResponseDto })
-  create(@Body() position: Partial<RealTimePosition>) {
+  create(@Body() position: CreateRealTimePositionDto) {
     return this.positionsService.create(position);
   }
 

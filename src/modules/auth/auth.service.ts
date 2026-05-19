@@ -1,6 +1,7 @@
 /* eslint-disable @typescript-eslint/require-await */
 import { Injectable } from '@nestjs/common';
 import { JwtService } from '@nestjs/jwt';
+import { ConfigService } from '@nestjs/config';
 import { UsersService } from '../users/users.service';
 import { User, UserRole } from '../users/entities/user.entity';
 import * as bcrypt from 'bcrypt';
@@ -14,6 +15,7 @@ export class AuthService {
     private usersService: UsersService,
     private jwtService: JwtService,
     private participationService: ParticipationService,
+    private configService: ConfigService,
   ) {}
 
   async validateUser(email: string, pass: string): Promise<User | null> {
@@ -38,6 +40,10 @@ export class AuthService {
     };
     return {
       access_token: this.jwtService.sign(payload),
+      refresh_token: this.jwtService.sign(payload, {
+        secret: this.configService.get<string>('JWT_REFRESH_SECRET'),
+        expiresIn: this.configService.get<string>('JWT_REFRESH_EXPIRES_IN', '30d') as any,
+      }),
       user,
     };
   }
@@ -71,7 +77,24 @@ export class AuthService {
 
     return {
       access_token: this.jwtService.sign(payload),
+      refresh_token: this.jwtService.sign(payload, {
+        secret: this.configService.get<string>('JWT_REFRESH_SECRET'),
+        expiresIn: this.configService.get<string>('JWT_REFRESH_EXPIRES_IN', '30d') as any,
+      }),
       participation,
+    };
+  }
+
+  refreshToken(payload: JwtPayload) {
+    const newPayload: JwtPayload = {
+      sub: payload.sub,
+      email: payload.email,
+      role: payload.role,
+      eventId: payload.eventId,
+      isAnonymous: payload.isAnonymous,
+    };
+    return {
+      access_token: this.jwtService.sign(newPayload),
     };
   }
 }
