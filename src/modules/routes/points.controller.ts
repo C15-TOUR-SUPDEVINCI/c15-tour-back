@@ -14,11 +14,14 @@ import {
   ApiBearerAuth,
   ApiOperation,
   ApiQuery,
+  ApiCreatedResponse,
+  ApiOkResponse,
 } from '@nestjs/swagger';
 import { PointsService } from './points.service';
 import { CreatePointDto } from './dto/create-point.dto';
 import { UpdatePointDto } from './dto/update-point.dto';
 import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
+import { PointResponseDto } from './dto/point-response.dto';
 
 @ApiTags('points')
 @Controller('points')
@@ -29,6 +32,7 @@ export class PointsController {
   @ApiBearerAuth()
   @UseGuards(JwtAuthGuard)
   @ApiOperation({ summary: 'Create a point (PASSAGE, INTERET, or PAUSE)' })
+  @ApiCreatedResponse({ type: PointResponseDto })
   create(@Body() createPointDto: CreatePointDto) {
     return this.pointsService.create(createPointDto);
   }
@@ -36,6 +40,7 @@ export class PointsController {
   @Get()
   @ApiOperation({ summary: 'Get all points, optionally filtered by routeId' })
   @ApiQuery({ name: 'routeId', required: false })
+  @ApiOkResponse({ type: PointResponseDto, isArray: true })
   findAll(@Query('routeId') routeId?: string) {
     if (routeId) {
       return this.pointsService.findByRoute(routeId);
@@ -45,6 +50,7 @@ export class PointsController {
 
   @Get(':id')
   @ApiOperation({ summary: 'Get point by ID' })
+  @ApiOkResponse({ type: PointResponseDto })
   findOne(@Param('id') id: string) {
     return this.pointsService.findOne(id);
   }
@@ -53,6 +59,7 @@ export class PointsController {
   @ApiBearerAuth()
   @UseGuards(JwtAuthGuard)
   @ApiOperation({ summary: 'Update point' })
+  @ApiOkResponse({ type: PointResponseDto })
   update(@Param('id') id: string, @Body() updatePointDto: UpdatePointDto) {
     return this.pointsService.update(id, updatePointDto);
   }
@@ -61,6 +68,7 @@ export class PointsController {
   @ApiBearerAuth()
   @UseGuards(JwtAuthGuard)
   @ApiOperation({ summary: 'Delete point' })
+  @ApiOkResponse({ description: 'Point deleted successfully' })
   remove(@Param('id') id: string) {
     return this.pointsService.remove(id);
   }
