@@ -8,12 +8,19 @@ import {
   Delete,
   UseGuards,
 } from '@nestjs/common';
-import { ApiTags, ApiBearerAuth, ApiOperation } from '@nestjs/swagger';
+import {
+  ApiTags,
+  ApiBearerAuth,
+  ApiOperation,
+  ApiCreatedResponse,
+  ApiOkResponse,
+} from '@nestjs/swagger';
 import { EventsService } from './events.service';
 import { CreateEventDto } from './dto/create-event.dto';
 import { UpdateEventDto } from './dto/update-event.dto';
 import { ChangeEventStatusDto } from './dto/change-event-status.dto';
 import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
+import { EventResponseDto } from './dto/event-response.dto';
 
 @ApiTags('events')
 @Controller('events')
@@ -24,18 +31,21 @@ export class EventsController {
   @ApiBearerAuth()
   @UseGuards(JwtAuthGuard)
   @ApiOperation({ summary: 'Create a new event (auto-generates shareCode)' })
+  @ApiCreatedResponse({ type: EventResponseDto })
   create(@Body() createEventDto: CreateEventDto) {
     return this.eventsService.create(createEventDto);
   }
 
   @Get()
   @ApiOperation({ summary: 'Get all events' })
+  @ApiOkResponse({ type: EventResponseDto, isArray: true })
   findAll() {
     return this.eventsService.findAll();
   }
 
   @Get(':id')
   @ApiOperation({ summary: 'Get event by ID' })
+  @ApiOkResponse({ type: EventResponseDto })
   findOne(@Param('id') id: string) {
     return this.eventsService.findOne(id);
   }
@@ -44,6 +54,7 @@ export class EventsController {
   @ApiBearerAuth()
   @UseGuards(JwtAuthGuard)
   @ApiOperation({ summary: 'Update event details' })
+  @ApiOkResponse({ type: EventResponseDto })
   update(@Param('id') id: string, @Body() updateEventDto: UpdateEventDto) {
     return this.eventsService.update(id, updateEventDto);
   }
@@ -54,6 +65,7 @@ export class EventsController {
   @ApiOperation({
     summary: 'Change event status (DRAFT→PLANNED→ONGOING→COMPLETED/CANCELLED)',
   })
+  @ApiOkResponse({ type: EventResponseDto })
   changeStatus(
     @Param('id') id: string,
     @Body() changeStatusDto: ChangeEventStatusDto,
@@ -65,6 +77,7 @@ export class EventsController {
   @ApiBearerAuth()
   @UseGuards(JwtAuthGuard)
   @ApiOperation({ summary: 'Delete event by ID' })
+  @ApiOkResponse({ description: 'Event deleted successfully' })
   remove(@Param('id') id: string) {
     return this.eventsService.remove(id);
   }
